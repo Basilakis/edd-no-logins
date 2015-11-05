@@ -46,16 +46,21 @@ class EDD_No_Logins
 
 
     function init() {
+        if ( is_user_logged_in() ) {
+            return;
+        }
+
         add_action( 'get_template_part_history', array( $this, 'login' ) );
         add_filter( 'edd_user_pending_verification', array( $this, 'override_pending' ) );
         add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
+        add_filter( 'edd_can_view_receipt', '__return_true' );
 
         $this->check_for_token();
     }
 
 
     function login() {
-        if ( ! $this->token_exists && ! is_user_logged_in() ) {
+        if ( ! $this->token_exists ) {
             include( EDDNL_DIR . '/templates/login-form.php' );
         }
     }
@@ -65,7 +70,7 @@ class EDD_No_Logins
      * See if "edd_nl" URL variable exists
      */
     function check_for_token() {
-        if ( isset( $_GET['edd_nl'] ) && ! is_user_logged_in() ) {
+        if ( isset( $_GET['edd_nl'] ) ) {
 
             // Not a valid token
             if ( ! $this->is_valid_token( $_GET['edd_nl'] ) ) {
