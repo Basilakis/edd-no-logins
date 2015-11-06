@@ -10,12 +10,15 @@ if ( ! empty( $email ) && is_email( $email ) ) {
         $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
     );
 
+    // @TODO: get proper URLs
+    // @TODO: add token auth to prevent passwords from getting reset anonymously
+    // edd_settings['purchase_history_page'] = post ID, then get the permalink URL and append ?edd_nl to it
     if ( $email_exists ) {
-        $token = EDDNL()->generate_token();
+        $token = wp_generate_password();
         EDDNL()->set_token( $token, $email );
 
         $subject = 'Your access token';
-        $message = "Your access token: " . $token;
+        $message = "Your access token: http://wp.dev/checkout/purchase-history/?edd_nl=" . $token;
         wp_mail( $email, $subject, $message );
     }
 }
@@ -37,10 +40,6 @@ if ( ! empty( $email ) && is_email( $email ) ) {
 
 <div class="eddnl-confirm">
     <?php _e( 'Thank you! Your access token has been sent.' ); ?>
-    <form method="get" action="">
-        <input type="text" name="edd_nl" value="" placeholder="Access token" />
-        <input type="submit" class="eddnl-submit" value="Login" />
-    </form>
 </div>
 
 <?php endif; ?>

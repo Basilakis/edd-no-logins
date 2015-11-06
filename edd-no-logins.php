@@ -50,18 +50,15 @@ class EDD_No_Logins
             return;
         }
 
-        add_action( 'get_template_part_history', array( $this, 'login' ) );
-        add_filter( 'edd_user_pending_verification', array( $this, 'override_pending' ) );
-        add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
-        add_filter( 'edd_can_view_receipt', '__return_true' );
-
         $this->check_for_token();
-    }
 
-
-    function login() {
-        if ( ! $this->token_exists ) {
-            include( EDDNL_DIR . '/templates/login-form.php' );
+        if ( $this->token_exists ) {
+            add_filter( 'edd_can_view_receipt', '__return_true' );
+            add_filter( 'edd_user_pending_verification', '__return_false' );
+            add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
+        }
+        else {
+            add_action( 'get_template_part_history', array( $this, 'login' ), 10, 2 );
         }
     }
 
@@ -98,15 +95,6 @@ class EDD_No_Logins
 
 
     /**
-     * Generate a new token
-     */
-    function generate_token() {
-        $bucket = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        return substr( str_shuffle( $bucket ), 0, 12 );
-    }
-
-
-    /**
      * Get tokens
      */
     function get_tokens() {
@@ -137,16 +125,10 @@ class EDD_No_Logins
 
 
     /**
-     * Bypass edd_user_pending_verification() when using shortcodes
-     *
-     * [purchase_history]
-     * [download_history]
+     * Token request form
      */
-    function override_pending( $pending ) {
-        if ( $this->token_exists ) {
-            $pending = false;
-        }
-        return $pending;
+    function login( $slug = 'history', $name = 'purchases' ) {
+        include( EDDNL_DIR . '/templates/login-form.php' );
     }
 
 
