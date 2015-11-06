@@ -50,6 +50,9 @@ class EDD_No_Logins
             return;
         }
 
+        // Setup the DB table
+        include( EDDNL_DIR . '/includes/class-upgrade.php' );
+
         $this->check_for_token();
 
         if ( $this->token_exists ) {
@@ -67,11 +70,18 @@ class EDD_No_Logins
      * See if "edd_nl" URL variable exists
      */
     function check_for_token() {
-        if ( isset( $_GET['edd_nl'] ) ) {
+        $token = isset( $_GET['edd_nl'] ) ? $_GET['edd_nl'] : '';
+        $verify_key = isset( $_GET['edd_nl_verify'] ) ? $_GET['edd_nl_verify'] : '';
+
+        if ( ! empty( $token ) ) {
 
             // Not a valid token
-            if ( ! $this->is_valid_token( $_GET['edd_nl'] ) ) {
-                return;
+            if ( ! $this->is_valid_token( $token ) ) {
+
+                // Resetting the token (incorrect verification)
+                if ( ! $this->is_valid_verify_key( $token, $verify_key ) ) {
+                    return;
+                }
             }
 
             $this->token_exists = true;
@@ -98,29 +108,67 @@ class EDD_No_Logins
      * Validate token
      */
     function is_valid_token( $token ) {
-        $this->token_email = array_search( $token, $this->get_tokens() );
-        return ( false !== $this->token_email );
+        global $wpdb;
+
+        $email = $wpdb->get_var(
+            $wpdb->prepare( "SELECT email FROM {$wpdb->prefix}eddnl_tokens WHERE token = %s LIMIT 1", $token )
+        );
+
+        if ( ! empty( $email ) ) {
+            $this->token_email = $email;
+        }
+
+        return ( ! empty( $email ) );
     }
 
 
     /**
-     * Get tokens
+     * Determine whether to reset the token
      */
-    function get_tokens() {
-        $tokens = get_option( 'eddnl_tokens' );
-        return empty ( $tokens ) ? array() : json_decode( $tokens, true );
+    function is_valid_verify_key( $token, $verify_key ) {
+        global $wpdb;
+
+        // See if the verify_key exists
+        $row = $wpdb->get_var(
+            $wpdb->prepare( "SELECT id, email FROM {$wpdb->prefix}eddnl_tokens WHERE verify_key = %s LIMIT 1", $verify_key )
+        );
+
+        // Set token
+        if ( ! empty( $row ) ) {
+            $wpdb->query(
+                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = '', token = %s WHERE id = %d LIMIT 1", $token, $row->id )
+            );
+
+            $this->token_email = $row->email;
+        }
+
+        return ( ! empty( $row ) );
     }
 
 
     /**
-     * Set a token value
+     * Only reset the token after email verification
      */
-    function set_token( $token, $email ) {
-        $tokens = $this->get_tokens();
-        $tokens[ $email ] = $token;
+    function set_verify_key( $email, $verify_key ) {
+        global $wpdb;
 
-        // Set option
-        update_option( 'eddnl_tokens', json_encode( $tokens ) );
+        // Insert or update?
+        $row_id = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE email = %s LIMIT 1", $email )
+        );
+
+        // Update
+        if ( ! empty( $row_id ) ) {
+            $wpdb->query(
+                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = %s WHERE id = %d LIMIT 1", $verify_key, $row_id )
+            );
+        }
+        // Insert
+        else {
+            $wpdb->query(
+                $wpdb->prepare( "INSERT INTO {$wpdb->prefix}eddnl_tokens (email, verify_key) VALUES (%s, %s)", $email, $verify_key )
+            );
+        }
     }
 
 

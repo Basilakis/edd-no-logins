@@ -10,17 +10,22 @@ if ( ! empty( $email ) && is_email( $email ) ) {
         $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
     );
 
-    // @TODO: add token auth to prevent passwords from getting reset anonymously
     if ( $email_exists ) {
-        $token = wp_generate_password();
-        EDDNL()->set_token( $token, $email );
+
+        // Generate the token and verification key
+        $token = wp_generate_password( 12, false );
+        $verify_key = wp_generate_password( 12, false );
+
+        //EDDNL()->set_token( $token, $email );
+        EDDNL()->set_verify_key( $email, $verify_key );
 
         // Get the purchase history URL
         $page_id = edd_get_option( 'purchase_history_page' );
         $page_url = get_permalink( $page_id );
 
-        $subject = 'Your access token';
-        $message = "Your access token: $page_url?edd_nl=" . $token;
+        // Send the email
+        $subject = __( 'Your access token', 'eddnl' );
+        $message = "$page_url?edd_nl=$token&edd_nl_verify=$verify_key";
         wp_mail( $email, $subject, $message );
     }
 }
