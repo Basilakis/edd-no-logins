@@ -10,15 +10,17 @@ if ( ! empty( $email ) && is_email( $email ) ) {
         $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
     );
 
-    // @TODO: get proper URLs
     // @TODO: add token auth to prevent passwords from getting reset anonymously
-    // edd_settings['purchase_history_page'] = post ID, then get the permalink URL and append ?edd_nl to it
     if ( $email_exists ) {
         $token = wp_generate_password();
         EDDNL()->set_token( $token, $email );
 
+        // Get the purchase history URL
+        $page_id = edd_get_option( 'purchase_history_page' );
+        $page_url = get_permalink( $page_id );
+
         $subject = 'Your access token';
-        $message = "Your access token: http://wp.dev/checkout/purchase-history/?edd_nl=" . $token;
+        $message = "Your access token: $page_url?edd_nl=" . $token;
         wp_mail( $email, $subject, $message );
     }
 }
@@ -31,15 +33,15 @@ if ( ! empty( $email ) && is_email( $email ) ) {
 
 <div class="eddnl-form">
     <form method="post" action="">
-        <input type="email" name="eddnl_email" value="" placeholder="Your purchase email" />
-        <input type="submit" class="eddnl-submit" value="Email me the access token" />
+        <input type="email" name="eddnl_email" value="" placeholder="<?php _e( 'Your purchase email', 'eddnl' ); ?>" />
+        <input type="submit" class="eddnl-submit" value="<?php _e( 'Email me the access token', 'eddnl' ); ?>" />
     </form>
 </div>
 
 <?php else : ?>
 
 <div class="eddnl-confirm">
-    <?php _e( 'Thank you! Your access token has been sent.' ); ?>
+    <?php _e( 'Your access token has been emailed to you.', 'eddnl' ); ?>
 </div>
 
 <?php endif; ?>

@@ -95,6 +95,15 @@ class EDD_No_Logins
 
 
     /**
+     * Validate token
+     */
+    function is_valid_token( $token ) {
+        $this->token_email = array_search( $token, $this->get_tokens() );
+        return ( false !== $this->token_email );
+    }
+
+
+    /**
      * Get tokens
      */
     function get_tokens() {
@@ -112,15 +121,6 @@ class EDD_No_Logins
 
         // Set option
         update_option( 'eddnl_tokens', json_encode( $tokens ) );
-    }
-
-
-    /**
-     * Validate token
-     */
-    function is_valid_token( $token ) {
-        $this->token_email = array_search( $token, $this->get_tokens() );
-        return ( false !== $this->token_email );
     }
 
 
