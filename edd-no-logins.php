@@ -94,7 +94,7 @@ class EDD_No_Logins
                 $user_id = $user->ID;
             }
             else {
-                $user_id = wp_create_user( 'eddnl', wp_generate_password(), 'eddnl@facetwp.com' );
+                $user_id = wp_create_user( 'eddnl', wp_generate_password( 20 ), 'eddnl@facetwp.com' );
                 update_user_meta( $user_id, 'show_admin_bar_front', false );
                 update_user_meta( $user_id, 'wp_capabilities', '' );
                 update_user_meta( $user_id, 'wp_user_level', 0 );

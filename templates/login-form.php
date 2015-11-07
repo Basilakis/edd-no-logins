@@ -3,7 +3,7 @@
 $email = isset( $_POST['eddnl_email'] ) ? $_POST['eddnl_email'] : '';
 
 // See if valid email
-if ( ! empty( $email ) && is_email( $email ) ) {
+if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'] ) ) {
     global $wpdb;
 
     $customer_id = (int) $wpdb->get_var(
@@ -13,7 +13,7 @@ if ( ! empty( $email ) && is_email( $email ) ) {
     if ( $customer_id ) {
 
         // Generate the verification key
-        $verify_key = wp_generate_password( 12, false );
+        $verify_key = wp_generate_password( 20, false );
 
         EDDNL()->set_verify_key( $customer_id, $email, $verify_key );
 
@@ -37,6 +37,7 @@ if ( ! empty( $email ) && is_email( $email ) ) {
 <div class="eddnl-form">
     <form method="post" action="">
         <input type="email" name="eddnl_email" value="" placeholder="<?php _e( 'Your purchase email', 'eddnl' ); ?>" />
+        <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce( '_wpnonce' ); ?>" />
         <input type="submit" class="eddnl-submit" value="<?php _e( 'Email me the access token', 'eddnl' ); ?>" />
     </form>
 </div>
