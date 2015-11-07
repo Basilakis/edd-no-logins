@@ -26,6 +26,7 @@ class EDDNL_Upgrade
         $sql = "
         CREATE TABLE {$wpdb->prefix}eddnl_tokens (
             id BIGINT unsigned not null auto_increment,
+            customer_id BIGINT unsigned default '0',
             email VARCHAR(255),
             token VARCHAR(255),
             verify_key VARCHAR(255),

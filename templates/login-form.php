@@ -6,18 +6,16 @@ $email = isset( $_POST['eddnl_email'] ) ? $_POST['eddnl_email'] : '';
 if ( ! empty( $email ) && is_email( $email ) ) {
     global $wpdb;
 
-    $email_exists = (int) $wpdb->get_var(
-        $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
+    $customer_id = (int) $wpdb->get_var(
+        $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
     );
 
-    if ( $email_exists ) {
+    if ( $customer_id ) {
 
-        // Generate the token and verification key
-        $token = wp_generate_password( 12, false );
+        // Generate the verification key
         $verify_key = wp_generate_password( 12, false );
 
-        //EDDNL()->set_token( $token, $email );
-        EDDNL()->set_verify_key( $email, $verify_key );
+        EDDNL()->set_verify_key( $customer_id, $email, $verify_key );
 
         // Get the purchase history URL
         $page_id = edd_get_option( 'purchase_history_page' );
@@ -25,7 +23,7 @@ if ( ! empty( $email ) && is_email( $email ) ) {
 
         // Send the email
         $subject = __( 'Your access token', 'eddnl' );
-        $message = "$page_url?edd_nl=$token&edd_nl_verify=$verify_key";
+        $message = "$page_url?eddnl=$verify_key";
         wp_mail( $email, $subject, $message );
     }
 }

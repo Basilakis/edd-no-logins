@@ -29,6 +29,7 @@ class EDD_No_Logins
 
     public $token_exists = false;
     public $token_email = false;
+    public $token = false;
     private static $instance;
 
 
@@ -58,6 +59,7 @@ class EDD_No_Logins
         if ( $this->token_exists ) {
             add_filter( 'edd_can_view_receipt', '__return_true' );
             add_filter( 'edd_user_pending_verification', '__return_false' );
+            add_filter( 'edd_get_success_page_uri', array( $this, 'edd_success_page_uri' ) );
             add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
         }
         else {
@@ -67,11 +69,10 @@ class EDD_No_Logins
 
 
     /**
-     * See if "edd_nl" URL variable exists
+     * See if "eddnl" URL variable exists
      */
     function check_for_token() {
-        $token = isset( $_GET['edd_nl'] ) ? $_GET['edd_nl'] : '';
-        $verify_key = isset( $_GET['edd_nl_verify'] ) ? $_GET['edd_nl_verify'] : '';
+        $token = isset( $_GET['eddnl'] ) ? $_GET['eddnl'] : '';
 
         if ( ! empty( $token ) ) {
 
@@ -79,7 +80,7 @@ class EDD_No_Logins
             if ( ! $this->is_valid_token( $token ) ) {
 
                 // Resetting the token (incorrect verification)
-                if ( ! $this->is_valid_verify_key( $token, $verify_key ) ) {
+                if ( ! $this->is_valid_verify_key( $token ) ) {
                     return;
                 }
             }
@@ -87,19 +88,29 @@ class EDD_No_Logins
             $this->token_exists = true;
 
             // Simulate a user login
-            $user = get_user_by( 'login', 'edd_nl' );
+            $user = get_user_by( 'login', 'eddnl' );
 
             if ( $user ) {
                 $user_id = $user->ID;
             }
             else {
-                $user_id = wp_create_user( 'edd_nl', wp_generate_password(), 'eddnl@facetwp.com' );
+                $user_id = wp_create_user( 'eddnl', wp_generate_password(), 'eddnl@facetwp.com' );
                 update_user_meta( $user_id, 'show_admin_bar_front', false );
                 update_user_meta( $user_id, 'wp_capabilities', '' );
                 update_user_meta( $user_id, 'wp_user_level', 0 );
             }
 
             wp_set_current_user( $user_id );
+        }
+    }
+
+
+    /**
+     * Append token to "View Details and Downloads" links
+     */
+    function edd_success_page_uri( $uri ) {
+        if ( $this->token_exists ) {
+            return add_query_arg( array( 'eddnl' => $this->token ), $uri );
         }
     }
 
@@ -116,21 +127,23 @@ class EDD_No_Logins
 
         if ( ! empty( $email ) ) {
             $this->token_email = $email;
+            $this->token = $token;
+            return true;
         }
 
-        return ( ! empty( $email ) );
+        return false;
     }
 
 
     /**
      * Determine whether to reset the token
      */
-    function is_valid_verify_key( $token, $verify_key ) {
+    function is_valid_verify_key( $token ) {
         global $wpdb;
 
         // See if the verify_key exists
-        $row = $wpdb->get_var(
-            $wpdb->prepare( "SELECT id, email FROM {$wpdb->prefix}eddnl_tokens WHERE verify_key = %s LIMIT 1", $verify_key )
+        $row = $wpdb->get_row(
+            $wpdb->prepare( "SELECT id, email FROM {$wpdb->prefix}eddnl_tokens WHERE verify_key = %s LIMIT 1", $token )
         );
 
         // Set token
@@ -140,21 +153,23 @@ class EDD_No_Logins
             );
 
             $this->token_email = $row->email;
+            $this->token = $token;
+            return true;
         }
 
-        return ( ! empty( $row ) );
+        return false;
     }
 
 
     /**
      * Only reset the token after email verification
      */
-    function set_verify_key( $email, $verify_key ) {
+    function set_verify_key( $customer_id, $email, $verify_key ) {
         global $wpdb;
 
         // Insert or update?
         $row_id = (int) $wpdb->get_var(
-            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE email = %s LIMIT 1", $email )
+            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d LIMIT 1", $customer_id )
         );
 
         // Update
@@ -166,7 +181,7 @@ class EDD_No_Logins
         // Insert
         else {
             $wpdb->query(
-                $wpdb->prepare( "INSERT INTO {$wpdb->prefix}eddnl_tokens (email, verify_key) VALUES (%s, %s)", $email, $verify_key )
+                $wpdb->prepare( "INSERT INTO {$wpdb->prefix}eddnl_tokens (customer_id, email, verify_key) VALUES (%d, %s, %s)", $customer_id, $email, $verify_key )
             );
         }
     }
