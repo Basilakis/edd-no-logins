@@ -29,7 +29,6 @@ class EDD_No_Logins
 
     public $token_exists = false;
     public $token_email = false;
-    public $token = false;
     private static $instance;
 
 
@@ -59,7 +58,6 @@ class EDD_No_Logins
         if ( $this->token_exists ) {
             add_filter( 'edd_can_view_receipt', '__return_true' );
             add_filter( 'edd_user_pending_verification', '__return_false' );
-            add_filter( 'edd_get_success_page_uri', array( $this, 'edd_success_page_uri' ) );
             add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
         }
         else {
@@ -74,18 +72,22 @@ class EDD_No_Logins
     function check_for_token() {
         $token = isset( $_GET['eddnl'] ) ? $_GET['eddnl'] : '';
 
+        // Check for cookie
+        if ( empty( $token ) ) {
+            $token = isset( $_COOKIE['eddnl'] ) ? $_COOKIE['eddnl'] : '';
+        }
+
         if ( ! empty( $token ) ) {
-
-            // Not a valid token
             if ( ! $this->is_valid_token( $token ) ) {
-
-                // Resetting the token (incorrect verification)
                 if ( ! $this->is_valid_verify_key( $token ) ) {
                     return;
                 }
             }
 
             $this->token_exists = true;
+
+            // Set cookie
+            setcookie( 'eddnl', $token );
 
             // Simulate a user login
             $user = get_user_by( 'login', 'eddnl' );
@@ -94,23 +96,16 @@ class EDD_No_Logins
                 $user_id = $user->ID;
             }
             else {
-                $user_id = wp_create_user( 'eddnl', wp_generate_password( 20 ), 'eddnl@facetwp.com' );
+                $user_id = wp_create_user( 'eddnl', wp_generate_password( 32 ), 'eddnl@facetwp.com' );
                 update_user_meta( $user_id, 'show_admin_bar_front', false );
                 update_user_meta( $user_id, 'wp_capabilities', '' );
                 update_user_meta( $user_id, 'wp_user_level', 0 );
+
+                $user = new WP_User( $user_id );
+                $user->add_cap( 'view_shop_sensitive_data' );
             }
 
             wp_set_current_user( $user_id );
-        }
-    }
-
-
-    /**
-     * Append token to "View Details and Downloads" links
-     */
-    function edd_success_page_uri( $uri ) {
-        if ( $this->token_exists ) {
-            return add_query_arg( array( 'eddnl' => $this->token ), $uri );
         }
     }
 
@@ -127,7 +122,6 @@ class EDD_No_Logins
 
         if ( ! empty( $email ) ) {
             $this->token_email = $email;
-            $this->token = $token;
             return true;
         }
 
@@ -153,7 +147,6 @@ class EDD_No_Logins
             );
 
             $this->token_email = $row->email;
-            $this->token = $token;
             return true;
         }
 
