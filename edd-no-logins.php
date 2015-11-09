@@ -42,7 +42,7 @@ class EDD_No_Logins
         define( 'EDDNL_BASENAME', plugin_basename( __FILE__ ) );
 
         // get the gears turning
-        add_action( 'init', array( $this, 'init' ) );
+        add_action( 'init', array( $this, 'init' ), 8 );
     }
 
 
