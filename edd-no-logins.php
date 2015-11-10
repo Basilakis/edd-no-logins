@@ -61,6 +61,7 @@ class EDD_No_Logins
             add_filter( 'edd_user_pending_verification', '__return_false' );
             add_filter( 'edd_get_success_page_uri', array( $this, 'edd_success_page_uri' ) );
             add_filter( 'edd_get_users_purchases_args', array( $this, 'users_purchases_args' ) );
+            add_filter( 'edd_payment_user_id', array( $this, 'edd_payment_user_id' ) );
         }
         else {
             add_action( 'get_template_part_history', array( $this, 'login' ), 10, 2 );
@@ -102,9 +103,6 @@ class EDD_No_Logins
                 update_user_meta( $user_id, 'show_admin_bar_front', false );
                 update_user_meta( $user_id, 'wp_capabilities', '' );
                 update_user_meta( $user_id, 'wp_user_level', 0 );
-
-                $user = new WP_User( $user_id );
-                $user->add_cap( 'view_shop_sensitive_data' );
             }
 
             wp_set_current_user( $user_id );
@@ -119,6 +117,14 @@ class EDD_No_Logins
         if ( $this->token_exists ) {
             return add_query_arg( array( 'eddnl' => $this->token ), $uri );
         }
+    }
+
+
+    /*
+     * Simulate the current user
+     */
+    function edd_payment_user_id( $user_id ) {
+        return get_current_user_id();
     }
 
 
