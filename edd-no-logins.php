@@ -54,6 +54,7 @@ class EDD_No_Logins
         // Setup the DB table
         include( EDDNL_DIR . '/includes/class-upgrade.php' );
 
+        $this->load_textdomain();
         $this->check_for_token();
 
         if ( $this->token_exists ) {
@@ -175,7 +176,7 @@ class EDD_No_Logins
 
 
     /**
-     * Only reset the token after email verification
+     * Set a verification key
      */
     function set_verify_key( $customer_id, $email, $verify_key ) {
         global $wpdb;
@@ -214,6 +215,22 @@ class EDD_No_Logins
     function users_purchases_args( $args ) {
         $args['user'] = $this->token_email;
         return $args;
+    }
+
+
+    /**
+     * i18n support
+     */
+    function load_textdomain() {
+        $locale = apply_filters( 'plugin_locale', get_locale(), 'eddnl' );
+        $mofile = WP_LANG_DIR . '/edd-no-logins/eddnl-' . $locale . '.mo';
+
+        if ( file_exists( $mofile ) ) {
+            load_textdomain( 'eddnl', $mofile );
+        }
+        else {
+            load_plugin_textdomain( 'eddnl', false, dirname( EDDNL_BASENAME ) . '/languages/' );
+        }
     }
 
 

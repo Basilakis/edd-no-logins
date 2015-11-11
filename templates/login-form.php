@@ -30,7 +30,7 @@ if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'], 'eddnl' ) ) {
 
 ?>
 
-<h3><?php _e( 'Access Account', 'eddnl' ); ?></h3>
+<h3><?php _e( 'Access Your Account', 'eddnl' ); ?></h3>
 
 <?php if ( empty( $email ) ) : ?>
 
@@ -38,14 +38,14 @@ if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'], 'eddnl' ) ) {
     <form method="post" action="">
         <input type="email" name="eddnl_email" value="" placeholder="<?php _e( 'Your purchase email', 'eddnl' ); ?>" />
         <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce( 'eddnl' ); ?>" />
-        <input type="submit" class="eddnl-submit" value="<?php _e( 'Email me the access token', 'eddnl' ); ?>" />
+        <input type="submit" class="eddnl-submit" value="<?php _e( 'Email me an access token', 'eddnl' ); ?>" />
     </form>
 </div>
 
 <?php else : ?>
 
 <div class="eddnl-confirm">
-    <?php _e( 'Your access token has been emailed to you.', 'eddnl' ); ?>
+    <?php _e( 'An access token has been emailed to you.', 'eddnl' ); ?>
 </div>
 
 <?php endif; ?>

@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: EDD - No Logins\n"
+"POT-Creation-Date: 2015-11-10 19:11-0500\n"
+"PO-Revision-Date: 2015-11-10 19:11-0500\n"
+"Last-Translator: Matt Gibbs <hello@facetwp.com>\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.6\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: templates/login-form.php:25
+msgid "Your access token"
+msgstr ""
+
+#: templates/login-form.php:33
+msgid "Access Your Account"
+msgstr ""
+
+#: templates/login-form.php:39
+msgid "Your purchase email"
+msgstr ""
+
+#: templates/login-form.php:41
+msgid "Email me an access token"
+msgstr ""
+
+#: templates/login-form.php:48
+msgid "An access token has been emailed to you."
+msgstr ""
