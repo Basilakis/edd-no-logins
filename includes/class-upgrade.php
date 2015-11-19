@@ -30,6 +30,7 @@ class EDDNL_Upgrade
             email VARCHAR(255),
             token VARCHAR(255),
             verify_key VARCHAR(255),
+            added DATETIME,
             PRIMARY KEY (id)
         ) DEFAULT CHARSET=utf8";
         dbDelta( $sql );

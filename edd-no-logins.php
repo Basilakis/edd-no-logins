@@ -3,7 +3,7 @@
 Plugin Name: EDD - No Logins
 Plugin URI: https://facetwp.com/
 Description: Allow users to access their purchase information without logging in
-Version: 0.1
+Version: 0.2
 Author: Matt Gibbs
 
 Copyright 2015 Matt Gibbs
@@ -30,13 +30,15 @@ class EDD_No_Logins
     public $token_exists = false;
     public $token_email = false;
     public $token = false;
+    public $error = '';
+
     private static $instance;
 
 
     function __construct() {
 
         // setup variables
-        define( 'EDDNL_VERSION', '0.1' );
+        define( 'EDDNL_VERSION', '0.2' );
         define( 'EDDNL_DIR', dirname( __FILE__ ) );
         define( 'EDDNL_URL', plugins_url( basename( EDDNL_DIR ) ) );
         define( 'EDDNL_BASENAME', plugin_basename( __FILE__ ) );
@@ -46,6 +48,9 @@ class EDD_No_Logins
     }
 
 
+    /**
+     * Register defaults and filters
+     */
     function init() {
         if ( is_user_logged_in() ) {
             return;
@@ -54,6 +59,11 @@ class EDD_No_Logins
         // Setup the DB table
         include( EDDNL_DIR . '/includes/class-upgrade.php' );
 
+        // Timeouts
+        $this->verify_throttle = apply_filters( 'eddnl_verify_throttle', 300 );
+        $this->token_expiration = apply_filters( 'eddnl_token_expiration', 86400 );
+
+        // Setup login
         $this->load_textdomain();
         $this->check_for_token();
 
@@ -71,7 +81,63 @@ class EDD_No_Logins
 
 
     /**
-     * See if "eddnl" URL variable exists
+     * Search for a customer ID by purchase email
+     */
+    function get_customer_id( $email ) {
+        global $wpdb;
+
+        $customer_id = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}edd_customers WHERE email = %s", $email )
+        );
+
+        return $customer_id;
+    }
+
+
+    /**
+     * Prevent email spamming
+     */
+    function can_send_email( $customer_id ) {
+        global $wpdb;
+
+        // Prevent multiple emails within X minutes
+        $throttle = date( 'Y-m-d H:i:s', time() - $this->verify_throttle );
+
+        $row_id = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d AND (added < %s OR verify_key = '') LIMIT 1", $customer_id, $throttle )
+        );
+
+        if ( $row_id < 1 ) {
+            EDDNL()->error = __( 'Please wait a few minutes before requesting a new token', 'eddnl' );
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Send the user's token
+     */
+    function send_email( $customer_id, $email ) {
+        $verify_key = wp_generate_password( 20, false );
+
+        // Generate a new verify key
+        $this->set_verify_key( $customer_id, $email, $verify_key );
+
+        // Get the purchase history URL
+        $page_id = edd_get_option( 'purchase_history_page' );
+        $page_url = get_permalink( $page_id );
+
+        // Send the email
+        $subject = __( 'Your access token', 'eddnl' );
+        $message = "$page_url?eddnl=$verify_key";
+        wp_mail( $email, $subject, $message );
+    }
+
+
+    /**
+     * Has the user authenticated?
      */
     function check_for_token() {
         $token = isset( $_GET['eddnl'] ) ? $_GET['eddnl'] : '';
@@ -112,31 +178,44 @@ class EDD_No_Logins
 
 
     /**
-     * Append token to "View Details and Downloads" links
+     * Add the verify key to DB
      */
-    function edd_success_page_uri( $uri ) {
-        if ( $this->token_exists ) {
-            return add_query_arg( array( 'eddnl' => $this->token ), $uri );
+    function set_verify_key( $customer_id, $email, $verify_key ) {
+        global $wpdb;
+
+        $now = date( 'Y-m-d H:i:s' );
+
+        // Insert or update?
+        $row_id = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d LIMIT 1", $customer_id )
+        );
+
+        // Update
+        if ( ! empty( $row_id ) ) {
+            $wpdb->query(
+                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = %s, added = %s WHERE id = %d LIMIT 1", $verify_key, $now, $row_id )
+            );
+        }
+        // Insert
+        else {
+            $wpdb->query(
+                $wpdb->prepare( "INSERT INTO {$wpdb->prefix}eddnl_tokens (customer_id, email, verify_key, added) VALUES (%d, %s, %s, %s)", $customer_id, $email, $verify_key, $now )
+            );
         }
     }
 
 
-    /*
-     * Simulate the current user
-     */
-    function edd_payment_user_id( $user_id ) {
-        return get_current_user_id();
-    }
-
-
     /**
-     * Validate token
+     * Is this a valid token?
      */
     function is_valid_token( $token ) {
         global $wpdb;
 
+        // Make sure token isn't expired
+        $expires = date( 'Y-m-d H:i:s', time() - $this->token_expiration );
+
         $email = $wpdb->get_var(
-            $wpdb->prepare( "SELECT email FROM {$wpdb->prefix}eddnl_tokens WHERE token = %s LIMIT 1", $token )
+            $wpdb->prepare( "SELECT email FROM {$wpdb->prefix}eddnl_tokens WHERE token = %s AND added >= %s LIMIT 1", $token, $expires )
         );
 
         if ( ! empty( $email ) ) {
@@ -145,12 +224,13 @@ class EDD_No_Logins
             return true;
         }
 
+        EDDNL()->error = __( 'That token has expired', 'eddnl' );
         return false;
     }
 
 
     /**
-     * Determine whether to reset the token
+     * Is this a valid verify key?
      */
     function is_valid_verify_key( $token ) {
         global $wpdb;
@@ -160,10 +240,12 @@ class EDD_No_Logins
             $wpdb->prepare( "SELECT id, email FROM {$wpdb->prefix}eddnl_tokens WHERE verify_key = %s LIMIT 1", $token )
         );
 
+        $now = date( 'Y-m-d H:i:s' );
+
         // Set token
         if ( ! empty( $row ) ) {
             $wpdb->query(
-                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = '', token = %s WHERE id = %d LIMIT 1", $token, $row->id )
+                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = '', token = %s, added = %s WHERE id = %d LIMIT 1", $token, $now, $row->id )
             );
 
             $this->token_email = $row->email;
@@ -176,33 +258,7 @@ class EDD_No_Logins
 
 
     /**
-     * Set a verification key
-     */
-    function set_verify_key( $customer_id, $email, $verify_key ) {
-        global $wpdb;
-
-        // Insert or update?
-        $row_id = (int) $wpdb->get_var(
-            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d LIMIT 1", $customer_id )
-        );
-
-        // Update
-        if ( ! empty( $row_id ) ) {
-            $wpdb->query(
-                $wpdb->prepare( "UPDATE {$wpdb->prefix}eddnl_tokens SET verify_key = %s WHERE id = %d LIMIT 1", $verify_key, $row_id )
-            );
-        }
-        // Insert
-        else {
-            $wpdb->query(
-                $wpdb->prepare( "INSERT INTO {$wpdb->prefix}eddnl_tokens (customer_id, email, verify_key) VALUES (%d, %s, %s)", $customer_id, $email, $verify_key )
-            );
-        }
-    }
-
-
-    /**
-     * Token request form
+     * Show the email login form
      */
     function login( $slug = 'history', $name = 'purchases' ) {
         include( EDDNL_DIR . '/templates/login-form.php' );
@@ -210,7 +266,25 @@ class EDD_No_Logins
 
 
     /**
-     * Get purchases by email instead of user ID
+     * Append the token to EDD purchase links
+     */
+    function edd_success_page_uri( $uri ) {
+        if ( $this->token_exists ) {
+            return add_query_arg( array( 'eddnl' => $this->token ), $uri );
+        }
+    }
+
+
+    /**
+     * Trick EDD into thinking we're logged in
+     */
+    function edd_payment_user_id( $user_id ) {
+        return get_current_user_id();
+    }
+
+
+    /**
+     * Force EDD to find purchases by purchase email, not user ID
      */
     function users_purchases_args( $args ) {
         $args['user'] = $this->token_email;
