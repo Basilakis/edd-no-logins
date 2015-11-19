@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: EDD - No Logins\n"
-"POT-Creation-Date: 2015-11-10 19:11-0500\n"
-"PO-Revision-Date: 2015-11-10 19:11-0500\n"
+"POT-Creation-Date: 2015-11-19 16:43-0500\n"
+"PO-Revision-Date: 2015-11-19 16:44-0500\n"
 "Last-Translator: Matt Gibbs <hello@facetwp.com>\n"
 "Language-Team: \n"
 "Language: en\n"
@@ -15,22 +15,34 @@ msgstr ""
 "X-Poedit-KeywordsList: _e;__\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: templates/login-form.php:25
+#: edd-no-logins.php:111
+msgid "Please wait a few minutes before requesting a new token"
+msgstr ""
+
+#: edd-no-logins.php:133
 msgid "Your access token"
 msgstr ""
 
-#: templates/login-form.php:33
+#: edd-no-logins.php:227
+msgid "That token has expired"
+msgstr ""
+
+#: templates/login-form.php:16
+msgid "That purchase email does not exist"
+msgstr ""
+
+#: templates/login-form.php:30
 msgid "Access Your Account"
 msgstr ""
 
-#: templates/login-form.php:39
+#: templates/login-form.php:40
 msgid "Your purchase email"
 msgstr ""
 
-#: templates/login-form.php:41
-msgid "Email me an access token"
+#: templates/login-form.php:42
+msgid "Email access token"
 msgstr ""
 
-#: templates/login-form.php:48
+#: templates/login-form.php:49
 msgid "An access token has been emailed to you."
 msgstr ""

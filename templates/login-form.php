@@ -49,5 +49,4 @@ if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'], 'eddnl' ) ) {
     <?php _e( 'An access token has been emailed to you.', 'eddnl' ); ?>
 </div>
 
-
 <?php endif; ?>
