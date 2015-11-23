@@ -103,13 +103,20 @@ class EDD_No_Logins
         // Prevent multiple emails within X minutes
         $throttle = date( 'Y-m-d H:i:s', time() - $this->verify_throttle );
 
-        $row_id = (int) $wpdb->get_var(
-            $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d AND (added < %s OR verify_key = '') LIMIT 1", $customer_id, $throttle )
+        // Does a user row exist?
+        $exists = (int) $wpdb->get_var(
+            $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d", $customer_id )
         );
 
-        if ( $row_id < 1 ) {
-            EDDNL()->error = __( 'Please wait a few minutes before requesting a new token', 'eddnl' );
-            return false;
+        if ( 0 < $exists ) {
+            $row_id = (int) $wpdb->get_var(
+                $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eddnl_tokens WHERE customer_id = %d AND (added < %s OR verify_key = '') LIMIT 1", $customer_id, $throttle )
+            );
+
+            if ( $row_id < 1 ) {
+                EDDNL()->error = __( 'Please wait a few minutes before requesting a new token', 'eddnl' );
+                return false;
+            }
         }
 
         return true;
