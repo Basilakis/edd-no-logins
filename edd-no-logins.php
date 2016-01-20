@@ -61,7 +61,7 @@ class EDD_No_Logins
 
         // Timeouts
         $this->verify_throttle = apply_filters( 'eddnl_verify_throttle', 300 );
-        $this->token_expiration = apply_filters( 'eddnl_token_expiration', 86400 );
+        $this->token_expiration = apply_filters( 'eddnl_token_expiration', 7200 );
 
         // Setup login
         $this->load_textdomain();

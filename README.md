@@ -24,4 +24,4 @@ Time (seconds) between when token requests can be sent to a given email address 
 
 `eddnl_token_expiration`
 
-Time (seconds) before an access token expires (default: 86400)
+Time (seconds) before an access token expires (default: 7200)
