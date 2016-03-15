@@ -3,10 +3,10 @@
 Plugin Name: EDD - No Logins
 Plugin URI: https://facetwp.com/
 Description: Allow users to access their purchase information without logging in
-Version: 0.3
+Version: 1.0
 Author: Matt Gibbs
 
-Copyright 2015 Matt Gibbs
+Copyright 2016 Matt Gibbs
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -38,9 +38,9 @@ class EDD_No_Logins
     function __construct() {
 
         // setup variables
-        define( 'EDDNL_VERSION', '0.3' );
+        define( 'EDDNL_VERSION', '1.0' );
         define( 'EDDNL_DIR', dirname( __FILE__ ) );
-        define( 'EDDNL_URL', plugins_url( basename( EDDNL_DIR ) ) );
+        define( 'EDDNL_URL', plugins_url( '', __FILE__ ) );
         define( 'EDDNL_BASENAME', plugin_basename( __FILE__ ) );
 
         // get the gears turning
