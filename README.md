@@ -5,7 +5,7 @@ Allow users to access their purchase info using only their purchase email
 
 * When a user visits EDD's Purchase History page (e.g. /checkout/purchase-history/), they will see this screen:
 
-<img src="http://i.imgur.com/pc4FFAp.png" width="371" height="108" />
+<img src="http://i.imgur.com/pqgaFQ8.png" width="315" height="219" />
 
 * After entering an email, a verification link will be emailed.
 * The verification link goes back to the Purchase History page, but with the user's purchase information visible.
