@@ -3,6 +3,10 @@
 $show_form = true;
 $email = isset( $_POST['eddnl_email'] ) ? $_POST['eddnl_email'] : '';
 
+// Get the purchase history URL
+$page_id = edd_get_option( 'purchase_history_page' );
+$page_url = get_permalink( $page_id );
+
 // Form submission
 if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'], 'eddnl' ) ) {
 
@@ -84,7 +88,7 @@ if ( is_email( $email ) && wp_verify_nonce( $_POST['_wpnonce'], 'eddnl' ) ) {
 
     <script src='https://www.google.com/recaptcha/api.js'></script>
     <div class="eddnl-form">
-    <form method="post" action="">
+    <form method="post" action="<?php echo $page_url; ?>">
         <input type="email" name="eddnl_email" value="" placeholder="<?php _e( 'Your purchase email', 'eddnl' ); ?>" />
         <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce( 'eddnl' ); ?>" />
 
