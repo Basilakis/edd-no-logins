@@ -2,7 +2,7 @@
 /*
 Plugin Name: EDD - No Logins
 Description: Allow users to access their purchase information without logging in
-Version: 1.0.1
+Version: 1.0.2
 Author: FacetWP, LLC
 Author URI: https://facetwp.com/
 GitHub URI: facetwp/edd-no-logins
@@ -24,7 +24,7 @@ class EDD_No_Logins
     function __construct() {
 
         // setup variables
-        define( 'EDDNL_VERSION', '1.0.1' );
+        define( 'EDDNL_VERSION', '1.0.2' );
         define( 'EDDNL_DIR', dirname( __FILE__ ) );
         define( 'EDDNL_URL', plugins_url( '', __FILE__ ) );
         define( 'EDDNL_BASENAME', plugin_basename( __FILE__ ) );
