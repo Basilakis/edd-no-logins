@@ -140,6 +140,11 @@ class EDD_No_Logins
             $token = isset( $_COOKIE['eddnl'] ) ? $_COOKIE['eddnl'] : '';
         }
 
+        // Ignore the token if email was just entered
+        if ( isset( $_POST['eddnl_email'] ) ) {
+            $token = false;
+        }
+
         if ( ! empty( $token ) ) {
             if ( ! $this->is_valid_token( $token ) ) {
                 if ( ! $this->is_valid_verify_key( $token ) ) {
