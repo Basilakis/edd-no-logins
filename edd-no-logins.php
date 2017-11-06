@@ -157,20 +157,31 @@ class EDD_No_Logins
             // Set cookie
             setcookie( 'eddnl', $token );
 
-            // Simulate a user login
-            $user = get_user_by( 'login', 'eddnl' );
+            // Does the user already have an account?
+            $existing_user = get_user_by( 'email', $this->token_email );
 
-            if ( $user ) {
-                $user_id = $user->ID;
+            // Login as real user
+            if ( $existing_user ) {
+                $user_id = $existing_user->ID;
             }
+
+            // Login as fake "eddnl" user
             else {
-                $user_id = wp_create_user( 'eddnl', wp_generate_password( 32 ), 'eddnl@facetwp.com' );
-                update_user_meta( $user_id, 'show_admin_bar_front', false );
-                update_user_meta( $user_id, 'wp_capabilities', '' );
-                update_user_meta( $user_id, 'wp_user_level', 0 );
+                $user = get_user_by( 'login', 'eddnl' );
+
+                if ( $user ) {
+                    $user_id = $user->ID;
+                }
+                else {
+                    $user_id = wp_create_user( 'eddnl', wp_generate_password( 32 ), 'eddnl@facetwp.com' );
+                    update_user_meta( $user_id, 'show_admin_bar_front', false );
+                    update_user_meta( $user_id, 'wp_capabilities', '' );
+                    update_user_meta( $user_id, 'wp_user_level', 0 );
+                }
             }
 
             wp_set_current_user( $user_id );
+            show_admin_bar( false );
         }
     }
 
